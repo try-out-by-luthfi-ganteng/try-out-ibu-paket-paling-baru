@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Try Out Substansi BCKS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16283d;
+    --ink-soft:#3c5066;
+    --paper:#f6f3ea;
+    --paper-raised:#ffffff;
+    --line:#dcd5c2;
+    --gold:#a9781f;
+    --gold-soft:#f1e6c9;
+    --good:#3d6b4c;
+    --good-bg:#e6efe6;
+    --bad:#a83e2c;
+    --bad-bg:#f6e6e1;
+    --navy2:#1e3a56;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    line-height:1.55;
+    min-height:100vh;
+  }
+  .app{
+    max-width:1180px;
+    margin:0 auto;
+    padding:20px 18px 60px;
+  }
+  header.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:20px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  header.top .title-block h1{
+    font-family:'Source Serif 4', serif;
+    font-weight:700;
+    font-size:28px;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  header.top .title-block p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:13.5px;
+  }
+  .timer-block{
+    text-align:right;
+  }
+  .timer-block .label{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-bottom:2px;
+  }
+  .timer-block .clock{
+    font-variant-numeric:tabular-nums;
+    font-size:30px;
+    font-weight:700;
+    font-family:'Source Serif 4', serif;
+    color:var(--navy2);
+  }
+  .timer-block .clock.warn{ color:var(--bad); }
+
+  .layout{
+    display:grid;
+    grid-template-columns:230px 1fr;
+    gap:26px;
+    align-items:start;
+  }
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;}
+    .layout .panel{order:1;}
+    .layout .map{order:2; position:static; max-height:260px; overflow-y:auto;}
+  }
+
+  /* sidebar map */
+  .map{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:16px 14px;
+    position:sticky;
+    top:20px;
+  }
+  .map h2{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+    font-weight:600;
+  }
+  .map .section-group{ margin-bottom:14px; }
+  .map .section-group:last-child{ margin-bottom:0; }
+  .map .section-name{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:6px;
+    display:flex;
+    justify-content:space-between;
+  }
+  .map .section-name span.count{ color:var(--ink-soft); font-weight:400; }
+  .map .grid{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:4px;
+  }
+  .map button.qnum{
+    aspect-ratio:1;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink-soft);
+    font-size:11px;
+    font-family:'IBM Plex Sans', sans-serif;
+    border-radius:2px;
+    cursor:pointer;
+    padding:0;
+  }
+  .map button.qnum:hover{ border-color:var(--navy2); }
+  .map button.qnum.answered{
+    background:var(--navy2);
+    color:#fff;
+    border-color:var(--navy2);
+  }
+  .map button.qnum.current{
+    outline:2px solid var(--gold);
+    outline-offset:1px;
+  }
+  .map button.qnum.correct{ background:var(--good); border-color:var(--good); color:#fff; }
+  .map button.qnum.wrong{ background:var(--bad); border-color:var(--bad); color:#fff; }
+
+  .progress-line{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .progress-line strong{ color:var(--ink); }
+
+  /* main panel */
+  .panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:28px 30px 24px;
+    min-height:420px;
+  }
+  .qmeta{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .qmeta .tag{
+    display:inline-block;
+    background:var(--gold-soft);
+    color:var(--gold);
+    font-size:11.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    padding:3px 10px;
+    border-radius:20px;
+  }
+  .qmeta .idx{
+    color:var(--ink-soft);
+    font-size:13px;
+  }
+  .qtext{
+    font-family:'Source Serif 4', serif;
+    font-size:19px;
+    line-height:1.5;
+    margin:0 0 22px;
+    max-width:66ch;
+  }
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .option{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    text-align:left;
+    width:100%;
+    padding:13px 16px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    border-radius:3px;
+    cursor:pointer;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14.5px;
+    color:var(--ink);
+    transition:border-color .12s ease, background .12s ease;
+  }
+  .option:hover{ border-color:var(--navy2); }
+  .option .letter{
+    flex:0 0 auto;
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    border:1px solid var(--ink-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .option.selected{
+    background:var(--gold-soft);
+    border-color:var(--gold);
+  }
+  .option.selected .letter{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#fff;
+  }
+  .option.correct{
+    background:var(--good-bg);
+    border-color:var(--good);
+  }
+  .option.correct .letter{ background:var(--good); border-color:var(--good); color:#fff; }
+  .option.wrong{
+    background:var(--bad-bg);
+    border-color:var(--bad);
+  }
+  .option.wrong .letter{ background:var(--bad); border-color:var(--bad); color:#fff; }
+  .option:disabled{ cursor:default; }
+
+  .explain{
+    margin-top:18px;
+    padding:14px 16px;
+    background:#fbf8f1;
+    border-left:3px solid var(--gold);
+    font-size:13.5px;
+    color:var(--ink-soft);
+    display:none;
+  }
+  .explain.show{ display:block; }
+  .explain strong{ color:var(--ink); }
+
+  .nav-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:3px;
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    cursor:pointer;
+  }
+  .btn.secondary{
+    background:transparent;
+    color:var(--ink);
+  }
+  .btn:disabled{ opacity:.35; cursor:default; }
+  .btn.gold{ background:var(--gold); border-color:var(--gold); }
+  .btn.danger{ background:var(--bad); border-color:var(--bad); }
+
+  /* intro / results screens */
+  .screen-center{
+    text-align:center;
+    padding:40px 20px;
+  }
+  .screen-center h2{
+    font-family:'Source Serif 4', serif;
+    font-size:24px;
+    margin-bottom:10px;
+  }
+  .screen-center p{
+    color:var(--ink-soft);
+    max-width:52ch;
+    margin:0 auto 22px;
+  }
+  .start-facts{
+    display:flex;
+    gap:26px;
+    justify-content:center;
+    margin:26px 0 30px;
+    flex-wrap:wrap;
+  }
+  .start-facts div{
+    text-align:center;
+  }
+  .start-facts .num{
+    font-family:'Source Serif 4', serif;
+    font-size:26px;
+    font-weight:700;
+    color:var(--navy2);
+  }
+  .start-facts .lab{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+
+  .results-summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:14px;
+    margin:24px 0 30px;
+  }
+  .results-summary .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:16px;
+  }
+  .results-summary .card .sec{
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .results-summary .card .score{
+    font-family:'Source Serif 4', serif;
+    font-size:22px;
+    font-weight:700;
+  }
+  .results-summary .card .bar{
+    height:5px;
+    background:var(--line);
+    border-radius:3px;
+    margin-top:8px;
+    overflow:hidden;
+  }
+  .results-summary .card .bar span{
+    display:block;
+    height:100%;
+    background:var(--navy2);
+  }
+
+  .review-list{
+    text-align:left;
+    margin-top:10px;
+  }
+  .review-item{
+    border-bottom:1px solid var(--line);
+    padding:14px 2px;
+  }
+  .review-item .rq{
+    font-size:14px;
+    margin-bottom:6px;
+  }
+  .review-item .rmeta{
+    font-size:12px;
+    display:flex;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .review-item .rmeta .pill{
+    padding:2px 8px;
+    border-radius:20px;
+    font-weight:600;
+  }
+  .review-item .rmeta .pill.correct{ background:var(--good-bg); color:var(--good); }
+  .review-item .rmeta .pill.wrong{ background:var(--bad-bg); color:var(--bad); }
+  .review-item .rmeta .pill.blank{ background:var(--gold-soft); color:var(--gold); }
+  .review-item .rexp{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+
+  .hidden{ display:none !important; }
+.qtext,.rq{white-space:pre-line}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="title-block">
+      <h1>Try Out Seleksi Substansi BCKS</h1>
+      <p>Paket 9 HOTS Transformasional &middot; 70 soal &middot; jenjang Sekolah Dasar &middot; mengacu Permendikdasmen No. 7/2025 &amp; Kepmendikdasmen No. 129/P/2025</p>
+    </div>
+    <div class="timer-block" id="timerBlock">
+      <div class="label">Sisa waktu</div>
+      <div class="clock" id="clock">02:00:00</div>
+    </div>
+  </header>
+
+  <!-- START SCREEN -->
+  <div id="startScreen" class="panel screen-center">
+    <h2>Siap mengerjakan try out?</h2>
+    <p>Latihan ini berisi 70 soal kasus HOTS bertema kepemimpinan transformasional terintegrasi dengan visi, misi, dan program berbasis data yang mengukur kompetensi kepribadian, sosial, dan profesional (manajerial, kewirausahaan, supervisi akademik) sesuai regulasi seleksi substansi BCKS yang berlaku. Kerjakan tanpa jeda seperti ujian sesungguhnya.</p>
+    <div class="start-facts">
+      <div><div class="num">70</div><div class="lab">Soal kasus</div></div>
+      <div><div class="num">120</div><div class="lab">Menit</div></div>
+      <div><div class="num">6</div><div class="lab">Kelompok soal</div></div>
+    </div>
+    <button class="btn gold" id="startBtn">Mulai Try Out</button>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quizScreen" class="layout hidden">
+    <aside class="map" id="mapPanel"></aside>
+    <main class="panel">
+      <div class="qmeta">
+        <span class="tag" id="qTag"></span>
+        <span class="idx" id="qIdx"></span>
+      </div>
+      <p class="qtext" id="qText"></p>
+      <div class="options" id="qOptions"></div>
+      <div class="nav-row">
+        <button class="btn secondary" id="prevBtn">&larr; Sebelumnya</button>
+        <button class="btn danger" id="finishBtn">Selesai &amp; Kirim</button>
+        <button class="btn" id="nextBtn">Selanjutnya &rarr;</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="resultScreen" class="panel hidden">
+    <div class="screen-center">
+      <h2 id="resultHeadline">Hasil Try Out</h2>
+      <p id="resultSub"></p>
+    </div>
+    <div class="results-summary" id="resultsSummary"></div>
+    <div>
+      <h2 style="font-size:18px; font-family:'Source Serif 4',serif; border-top:1px solid var(--line); padding-top:20px;">Pembahasan lengkap</h2>
+      <div class="review-list" id="reviewList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ======================= DATA: 70 SOAL BARU (PAKET 3 - JENJANG SD) ======================= */
+const RAW = [
+{s:"Manajerial", q:"Kepala sekolah baru merumuskan visi baru yang inspiratif bersama warga sekolah, namun saat diturunkan menjadi program kerja, sebagian guru bingung menerjemahkannya menjadi kegiatan konkret sehari-hari. Langkah kepemimpinan transformasional yang paling tepat adalah ....", opts:["Membiarkan setiap guru menerjemahkan visi tersebut menurut pemahaman masing-masing.", "Menyederhanakan visi tersebut menjadi kalimat yang lebih pendek tanpa mengubah substansinya, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini.", "Menetapkan sendiri seluruh indikator dan langkah konkret dari visi tersebut secara sepihak.", "Memfasilitasi guru merumuskan indikator dan langkah konkret dari visi tersebut secara partisipatif, agar visi benar-benar menjadi acuan kerja nyata, bukan sekadar slogan."], correct:3, e:"Kepemimpinan transformasional menggerakkan visi menjadi tindakan nyata lewat proses partisipatif, bukan penetapan sepihak, pembiaran tanpa arah, atau sekadar penyederhanaan kalimat."},
+{s:"Manajerial", q:"Setelah visi baru dirumuskan, kepala sekolah menyadari bahwa sebagian program lama yang sudah berjalan bertahun-tahun ternyata tidak lagi selaras dengan arah visi tersebut, meski program itu masih disukai warga sekolah. Sikap paling tepat adalah ....", opts:["Mengevaluasi keselarasan program lama dengan visi baru secara terbuka bersama warga sekolah, lalu menyesuaikan atau menghentikannya berdasarkan hasil evaluasi bersama, bukan keputusan sepihak.", "Menghentikan program lama tersebut secara langsung karena tidak selaras dengan visi baru.", "Menjalankan program lama dan program baru secara bersamaan tanpa mengevaluasi keselarasannya, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi.", "Mempertahankan program lama tersebut karena masih disukai oleh warga sekolah."], correct:0, e:"Pemimpin transformasional menyelaraskan seluruh program dengan visi lewat dialog terbuka, bukan mempertahankan demi kesukaan, menghentikan sepihak, atau membiarkan program berjalan tanpa arah yang jelas."},
+{s:"Manajerial", q:"Rapor Pendidikan menunjukkan capaian sekolah stagnan meski visi baru yang inspiratif sudah dicanangkan setahun lalu. Kepala sekolah menduga masalahnya bukan pada visi, melainkan pada belum adanya program konkret yang benar-benar menerjemahkannya. Langkah paling tepat adalah ....", opts:["Menyusun program prioritas berbasis data Rapor Pendidikan yang secara eksplisit menerjemahkan visi ke dalam target dan langkah kerja yang terukur.", "Merumuskan ulang visi sekolah dengan kalimat yang lebih inspiratif dari sebelumnya.", "Menunggu satu tahun lagi untuk melihat apakah visi tersebut mulai membuahkan hasil.", "Menyerahkan penyusunan program penerjemah visi tersebut sepenuhnya kepada setiap guru, secara sepihak tanpa persetujuan pihak terkait, agar terlihat responsif meski belum tentu menjawab akar masalahnya."], correct:0, e:"Visi yang inspiratif tetap memerlukan program konkret berbasis data agar benar-benar berdampak; masalahnya bukan pada kalimat visi, menunggu pasif, atau melepas tanggung jawab penyusunan program."},
+{s:"Manajerial", q:"Kepala sekolah yang dikenal visioner dan inspiratif ternyata jarang melibatkan guru dalam proses pengambilan keputusan, karena merasa sudah cukup memahami arah terbaik bagi sekolah. Sikap paling tepat untuk benar-benar menerapkan kepemimpinan transformasional adalah ....", opts:["Mengurangi frekuensi penyampaian visi agar tidak terkesan terlalu mendominasi forum.", "Meminta guru untuk lebih percaya pada arahan kepala sekolah tanpa banyak bertanya.", "Menyadari bahwa kepemimpinan transformasional sejati juga memberdayakan dan melibatkan bawahan dalam proses berpikir, bukan hanya menyampaikan visi dari atas.", "Mempertahankan gaya tersebut karena visi yang disampaikannya selama ini terbukti tepat, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi, agar terlihat responsif meski belum tentu menjawab akar masalahnya."], correct:2, e:"Kepemimpinan transformasional bukan sekadar visi yang inspiratif dari satu orang, melainkan juga pemberdayaan dan keterlibatan bawahan dalam proses berpikir bersama."},
+{s:"Manajerial", q:"Sekolah menghadapi perubahan besar berupa penerapan kurikulum nasional dan pembelajaran mendalam secara bersamaan. Sebagian guru merasa kewalahan dan mulai kehilangan semangat meski memahami pentingnya perubahan tersebut. Langkah kepemimpinan transformasional paling tepat adalah ....", opts:["Menyerahkan sepenuhnya proses adaptasi tersebut kepada inisiatif masing-masing guru.", "Membangun kembali semangat guru dengan mengaitkan perubahan tersebut pada makna dan tujuan yang lebih besar bagi murid, sambil memastikan dukungan teknis yang memadai selama proses.", "Menunda salah satu perubahan tersebut agar guru tidak terlalu terbebani sekaligus.", "Menegaskan kembali kewajiban guru untuk mengikuti kebijakan perubahan tersebut sesuai aturan, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah."], correct:1, e:"Kepemimpinan transformasional membangkitkan motivasi intrinsik lewat makna dan tujuan bersama, disertai dukungan nyata, bukan sekadar menegaskan kewajiban, menunda, atau melepas tanggung jawab."},
+{s:"Manajerial", q:"Dalam menyusun RKJM, kepala sekolah mengajak seluruh warga sekolah membayangkan kondisi sekolah lima tahun ke depan secara inspiratif, namun saat dituangkan ke RKT tahunan, target-targetnya menjadi sangat teknis dan kurang menggugah semangat. Sikap paling tepat adalah ....", opts:["Menyusun RKJM dan RKT secara terpisah tanpa perlu menjaga keterkaitan keduanya.", "Membiarkan RKT tetap bersifat teknis karena itu memang fungsinya sebagai dokumen operasional, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah.", "Menghapus seluruh target teknis dan menggantinya dengan pernyataan yang lebih inspiratif.", "Menjaga keterkaitan antara RKT tahunan dengan gambaran inspiratif RKJM, misalnya dengan mengaitkan setiap target teknis pada dampak nyata bagi murid yang mudah dipahami warga sekolah."], correct:3, e:"Kepemimpinan transformasional menjaga agar dokumen teknis tetap terhubung dengan makna inspiratif visi, bukan membiarkan keduanya terpisah atau mengorbankan kejelasan teknis demi kalimat inspiratif semata."},
+{s:"Manajerial", q:"Kepala sekolah mendapati bahwa program inovasi pembelajaran yang ia gagas sendiri kurang mendapat antusiasme guru, sementara program serupa yang diusulkan salah satu guru justru disambut baik oleh rekan-rekannya. Sikap kepemimpinan transformasional paling tepat adalah ....", opts:["Menghentikan kedua program tersebut karena keduanya menimbulkan perbedaan pandangan.", "Mendukung penuh program yang diusulkan guru tersebut sebagai wujud kepemimpinan bersama, sambil membantu mengembangkannya agar selaras dengan visi sekolah.", "Menggabungkan kedua program tersebut menjadi satu tanpa mempertimbangkan mana yang lebih diminati, walau belum tentu efektif dalam jangka panjang, secara sepihak tanpa persetujuan pihak terkait.", "Tetap mendorong program miliknya sendiri karena berasal dari analisis kepala sekolah."], correct:1, e:"Kepemimpinan transformasional memberdayakan inisiatif dari mana pun asalnya, bukan mempertahankan ego program pribadi, menggabungkan tanpa pertimbangan, atau menghentikan karena perbedaan pandangan."},
+{s:"Manajerial", q:"Kepala sekolah ingin menanamkan budaya belajar berkelanjutan sebagai bagian dari visi transformasionalnya, namun anggaran pengembangan profesional guru sangat terbatas tahun ini. Langkah paling tepat adalah ....", opts:["Menunda seluruh upaya penguatan budaya belajar sampai anggaran mencukupi.", "Memaksakan pelatihan formal meski anggarannya jauh dari mencukupi kebutuhan.", "Mengembangkan budaya belajar lewat mekanisme berbiaya rendah seperti komunitas belajar dan berbagi praktik baik antarguru, tanpa bergantung sepenuhnya pada anggaran pelatihan formal.", "Menyerahkan pengembangan profesional sepenuhnya kepada inisiatif pribadi masing-masing guru, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi."], correct:2, e:"Kepemimpinan transformasional menemukan cara membangun budaya belajar meski sumber daya terbatas, lewat mekanisme internal yang berbiaya rendah, bukan menunda, memaksakan, atau melepas tanggung jawab."},
+{s:"Manajerial", q:"Setelah dua tahun menerapkan gaya kepemimpinan yang sangat inspiratif dan visioner, kepala sekolah menyadari capaian akademik memang membaik, namun sistem kerja sekolah masih sangat bergantung pada energinya secara personal. Langkah paling tepat adalah ....", opts:["Mempertahankan gaya kepemimpinan tersebut karena capaian akademik sudah terbukti membaik, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi, secara sepihak tanpa persetujuan pihak terkait.", "Membiarkan kondisi tersebut karena dianggap wajar bagi kepemimpinan yang efektif.", "Mulai melembagakan visi dan praktik baik tersebut ke dalam sistem, struktur, dan budaya kerja sekolah, agar keberlanjutannya tidak bergantung pada figur kepala sekolah semata.", "Mengurangi keterlibatan pribadinya secara drastis agar sistem segera belajar mandiri."], correct:2, e:"Kepemimpinan transformasional yang matang melembagakan perubahan ke dalam sistem agar berkelanjutan, bukan bergantung pada figur personal, dikurangi drastis, atau dibiarkan tanpa pelembagaan."},
+{s:"Manajerial", q:"Kepala sekolah mengajak guru merumuskan ulang tujuan sekolah agar lebih relevan dengan kebutuhan murid saat ini, namun sebagian guru senior merasa tujuan lama yang sudah puluhan tahun dipakai tidak perlu diubah. Sikap kepemimpinan transformasional paling tepat adalah ....", opts:["Mempertahankan tujuan lama tersebut demi menghormati pandangan guru senior.", "Menjalankan tujuan lama dan tujuan baru secara bersamaan tanpa penyelarasan yang jelas, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran, secara sepihak tanpa persetujuan pihak terkait.", "Membuka dialog reflektif tentang relevansi tujuan lama terhadap data dan kebutuhan murid saat ini, sehingga perubahan yang terjadi lahir dari kesadaran bersama, bukan paksaan sepihak.", "Mengubah tujuan sekolah secara langsung berdasarkan keputusan kepala sekolah sendiri."], correct:2, e:"Perubahan tujuan yang transformasional lahir dari kesadaran bersama lewat dialog reflektif berbasis data, bukan mempertahankan status quo, memaksakan sepihak, atau menjalankan dua arah tanpa penyelarasan."},
+{s:"Manajerial", q:"Kepala sekolah menemukan bahwa program-program inovatif yang selama ini digagasnya cenderung berhenti begitu ia berpindah fokus ke inovasi berikutnya, karena belum ada mekanisme keberlanjutan yang jelas. Langkah paling tepat adalah ....", opts:["Menghentikan seluruh inovasi baru sampai seluruh program lama benar-benar tuntas dijalankan.", "Terus meluncurkan inovasi baru karena semangat perubahan adalah ciri kepemimpinan transformasional, meski risikonya belum sepenuhnya dipertimbangkan, secara sepihak tanpa persetujuan pihak terkait.", "Membiarkan program-program tersebut berhenti secara alami karena dianggap sudah mencapai tujuannya.", "Menetapkan penanggung jawab dan mekanisme evaluasi berkala untuk setiap program inovasi sebelum meluncurkan inovasi berikutnya, agar keberlanjutan program terjaga."], correct:3, e:"Kepemimpinan transformasional yang matang memastikan keberlanjutan lewat mekanisme yang jelas, bukan sekadar terus berinovasi tanpa keberlanjutan, berhenti total, atau membiarkan program mati begitu saja."},
+{s:"Manajerial", q:"Kepala sekolah menyusun program peningkatan mutu yang sangat ambisius sesuai visi jangka panjang, namun tim guru merasa target tersebut terlalu jauh dari kondisi nyata sekolah saat ini sehingga sebagian mulai pesimis. Sikap paling tepat adalah ....", opts:["Membiarkan tim bekerja menurut kemampuan masing-masing tanpa tahapan capaian yang jelas.", "Menurunkan visi jangka panjang tersebut menjadi target yang jauh lebih rendah dan mudah dicapai, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi.", "Memecah visi jangka panjang tersebut menjadi tahapan capaian jangka pendek yang realistis dan dapat dirayakan, agar tim tetap termotivasi menuju tujuan besar.", "Mempertahankan target ambisius tersebut secara utuh agar semangat perubahan tetap terjaga."], correct:2, e:"Kepemimpinan transformasional menerjemahkan visi besar menjadi tahapan realistis yang memelihara motivasi, bukan mempertahankan target yang membuat pesimis, menurunkan visi, atau membiarkan tanpa tahapan."},
+{s:"Manajerial", q:"Kepala sekolah yang inspiratif berhasil membangun antusiasme tinggi terhadap program pembelajaran mendalam, namun data pelaksanaan di lapangan menunjukkan sebagian guru menerapkannya secara dangkal, sekadar mengikuti tren tanpa pemahaman mendalam. Sikap paling tepat adalah ....", opts:["Menambah promosi program tersebut agar semangat guru semakin meningkat lagi.", "Mempertahankan tingkat antusiasme tersebut karena semangat perubahan sudah tumbuh dengan baik, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat.", "Menghentikan program tersebut karena penerapannya belum sesuai dengan yang diharapkan.", "Menyeimbangkan antusiasme dengan penguatan pemahaman substantif lewat pendampingan dan refleksi, agar semangat perubahan diiringi kompetensi yang sesuai."], correct:3, e:"Kepemimpinan transformasional menyeimbangkan inspirasi dengan kompetensi nyata lewat pendampingan substantif, bukan sekadar mempertahankan antusiasme, menghentikan program, atau menambah promosi tanpa substansi."},
+{s:"Manajerial", q:"Kepala sekolah menemukan bahwa capaian literasi kelas rendah jauh lebih baik dibanding kelas tinggi, padahal secara logika kemampuan seharusnya meningkat seiring jenjang. Sebagai bagian dari kepemimpinan berbasis data, langkah paling tepat adalah ....", opts:["Mengabaikan perbedaan tersebut karena literasi bukan fokus utama di kelas tinggi.", "Menelusuri kemungkinan penurunan kualitas pembelajaran literasi di kelas tinggi, misalnya berkurangnya porsi literasi karena fokus pada mata pelajaran lain seiring jenjang.", "Menyimpulkan murid kelas tinggi memang kurang berbakat dalam literasi dibanding adik kelasnya, secara sepihak tanpa persetujuan pihak terkait, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini.", "Menambah jam literasi di kelas rendah karena sudah terbukti berhasil di sana."], correct:1, e:"Pola capaian yang berlawanan dengan logika perkembangan usia menandakan ada faktor sistemik di kelas tinggi yang perlu ditelusuri berbasis data, bukan disimpulkan sebagai bakat murid."},
+{s:"Manajerial", q:"Kepala sekolah mendapati bahwa visi transformasional yang ia bangun sangat diterima oleh guru muda, namun guru senior yang berpengalaman cenderung skeptis dan memilih diam dalam setiap forum. Langkah paling tepat adalah ....", opts:["Mendekati guru senior tersebut secara personal untuk memahami akar kekhawatirannya, dan melibatkan pengalaman mereka sebagai bagian penting dari perjalanan perubahan.", "Mengabaikan sikap diam guru senior tersebut karena dianggap tidak menghambat proses perubahan, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran.", "Meminta guru muda untuk meyakinkan guru senior agar turut mendukung visi tersebut.", "Memfokuskan energi kepemimpinan pada guru muda yang sudah menunjukkan antusiasme tinggi."], correct:0, e:"Kepemimpinan transformasional yang inklusif merangkul keraguan lewat pendekatan personal dan menghargai pengalaman, bukan hanya fokus pada yang antusias, mengabaikan keraguan, atau melimpahkan tugas persuasi ke pihak lain."},
+{s:"Manajerial", q:"Kepala sekolah mendapati bahwa satu kelas tertentu secara konsisten mencatat pelanggaran disiplin lebih tinggi dibanding kelas lain selama tiga semester berturut-turut, meski wali kelasnya sudah berganti dua kali. Langkah investigatif paling tepat adalah ....", opts:["Menyimpulkan bahwa kedua wali kelas yang pernah bertugas sama-sama kurang kompeten, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah.", "Menambah sanksi bagi seluruh murid di kelas tersebut agar pelanggaran menurun.", "Membiarkan pola tersebut karena dianggap karakter alami kelas itu saja.", "Menelusuri faktor struktural pada kelas tersebut seperti komposisi murid, ukuran kelas, atau pola interaksi sosial, karena pergantian wali kelas tidak mengubah pola pelanggaran."], correct:3, e:"Pola yang bertahan meski wali kelas berganti menunjukkan faktor struktural di luar kendali individu guru, sehingga perlu ditelusuri lebih dalam berbasis data, bukan disimpulkan sebagai kompetensi guru atau dibiarkan."},
+{s:"Manajerial", q:"Kepala sekolah yang dikenal karismatik dan menginspirasi ternyata jarang mendokumentasikan alasan di balik keputusan-keputusan pentingnya, sehingga sulit dievaluasi atau dipelajari oleh calon pemimpin berikutnya. Langkah paling tepat adalah ....", opts:["Membiarkan keputusan-keputusan tersebut tidak terdokumentasi karena dianggap sudah dipahami bersama, agar terlihat responsif meski belum tentu menjawab akar masalahnya, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini.", "Mempertahankan gaya kepemimpinan intuitif tersebut karena telah terbukti efektif selama ini.", "Menyerahkan pendokumentasian tersebut sepenuhnya kepada staf tata usaha tanpa keterlibatan langsung.", "Mulai mendokumentasikan proses dan alasan pengambilan keputusan penting secara sistematis, agar kepemimpinan transformasional yang dibangun dapat diwariskan dan dievaluasi secara objektif."], correct:3, e:"Keberlanjutan kepemimpinan transformasional memerlukan dokumentasi yang sistematis agar dapat diwariskan dan dievaluasi, bukan mengandalkan intuisi semata, melimpahkan tanpa keterlibatan, atau membiarkan tanpa dokumentasi."},
+{s:"Manajerial", q:"Rapor Pendidikan tahun ini menunjukkan literasi naik tajam setelah program les tambahan sore hari diberlakukan wajib, namun angka kehadiran ekstrakurikuler turun drastis. Sebagai pemimpin yang berbasis data dan visi jangka panjang, langkah paling tepat adalah ....", opts:["Mengevaluasi beban waktu total murid akibat kewajiban les sore, lalu menata ulang jadwal agar literasi tetap terjaga tanpa mengorbankan pengembangan bakat lain sesuai visi holistik sekolah.", "Menghapus les sore sepenuhnya karena ekstrakurikuler dianggap sama pentingnya.", "Membiarkan kedua tren berjalan karena keduanya dianggap bukan indikator utama sekolah.", "Mempertahankan kewajiban les sore karena hasil literasi sudah terbukti naik signifikan, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran."], correct:0, e:"Kepemimpinan berbasis data dan visi holistik menata ulang beban total murid agar seluruh aspek perkembangan terjaga, bukan mempertahankan satu indikator dengan mengorbankan yang lain, atau membiarkan tanpa evaluasi."},
+{s:"Manajerial", q:"Kepala sekolah menemukan bahwa program mentoring antarguru berjalan baik pada guru muda, namun belum menyentuh guru paruh baya yang justru menunjukkan tanda kejenuhan mengajar. Sebagai bagian dari kepemimpinan yang memberdayakan seluruh warga sekolah, langkah paling tepat adalah ....", opts:["Mengurangi beban mengajar guru paruh baya tanpa memberikan tantangan baru apa pun, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini.", "Merancang bentuk pengembangan profesional yang relevan dengan tahap karier guru paruh baya, seperti peran baru atau tantangan yang membangkitkan kembali motivasi mengajarnya.", "Membiarkan kondisi tersebut karena guru paruh baya dianggap sudah berpengalaman.", "Memasukkan guru paruh baya ke program mentoring yang sama seperti guru muda."], correct:1, e:"Kepemimpinan transformasional memberdayakan seluruh guru sesuai tahap kariernya masing-masing dengan tantangan yang relevan, bukan menyamaratakan program, membiarkan, atau mengurangi beban tanpa arah baru."},
+{s:"Manajerial", q:"Kepala sekolah ingin agar visi sekolah benar-benar dipahami murid, tidak hanya guru dan orang tua, namun belum menemukan cara yang sesuai dengan usia murid sekolah dasar. Langkah paling tepat adalah ....", opts:["Menerjemahkan visi sekolah ke dalam bahasa dan kegiatan sehari-hari yang konkret dan mudah dipahami murid, misalnya lewat kebiasaan rutin yang mencerminkan nilai visi tersebut.", "Menunggu murid cukup dewasa untuk memahami visi sekolah secara langsung.", "Menempelkan poster visi sekolah di berbagai sudut sekolah tanpa penjelasan lebih lanjut, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran, secara sepihak tanpa persetujuan pihak terkait.", "Menganggap pemahaman visi oleh murid bukan hal yang penting untuk saat ini."], correct:0, e:"Kepemimpinan transformasional yang efektif menjangkau seluruh warga sekolah termasuk murid lewat penerjemahan konkret sesuai usia, bukan menunggu, sekadar menempel poster, atau menganggap tidak penting."},
+{s:"Manajerial", q:"Kepala sekolah menyusun RKT dengan mengajak guru membayangkan dampak jangka panjang setiap program terhadap murid, namun beberapa guru tetap kesulitan mengaitkan kegiatan rutin sehari-hari dengan visi besar tersebut. Langkah paling tepat adalah ....", opts:["Membiarkan guru memahami keterkaitan tersebut seiring berjalannya waktu secara alami.", "Menyederhanakan visi sekolah menjadi slogan yang lebih singkat dan mudah diingat.", "Memberikan contoh konkret bagaimana kegiatan rutin sehari-hari dapat dikaitkan dengan pencapaian visi, sehingga guru memiliki kerangka berpikir yang jelas untuk kegiatan lain.", "Menjelaskan visi tersebut berulang kali dengan kalimat yang berbeda-beda setiap rapat, secara sepihak tanpa persetujuan pihak terkait, meski risikonya belum sepenuhnya dipertimbangkan."], correct:2, e:"Kepemimpinan transformasional memberi kerangka berpikir konkret agar visi benar-benar dapat diterjemahkan ke kegiatan sehari-hari, bukan hanya mengulang kalimat, membiarkan waktu berjalan, atau menyederhanakan menjadi slogan."},
+{s:"Manajerial", q:"Kepala sekolah menyadari bahwa keberhasilan program transformasi pembelajaran di sekolahnya banyak disorot media dan sekolah lain, namun ia sendiri menyadari bahwa keberhasilan itu rentan runtuh jika ia dipindahtugaskan. Langkah paling tepat adalah ....", opts:["Mendokumentasikan program tersebut secara tertulis tanpa menyiapkan kader pemimpin baru.", "Segera membangun kader pemimpin pembelajaran di internal sekolah yang mampu melanjutkan arah transformasi tersebut, agar keberlanjutan tidak bergantung pada dirinya semata.", "Meminta dinas pendidikan menjamin dirinya tidak dipindahtugaskan dalam waktu dekat.", "Menikmati pengakuan tersebut sambil terus memimpin dengan gaya yang sama seperti sekarang, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi."], correct:1, e:"Keberlanjutan transformasi yang sejati dibangun lewat kaderisasi kepemimpinan internal, bukan menikmati pengakuan semata, meminta jaminan posisi, atau sekadar dokumentasi tanpa penyiapan pemimpin baru."},
+{s:"Manajerial", q:"Dalam menyusun visi baru, kepala sekolah menerima banyak masukan berbeda dari guru, orang tua, dan murid yang kadang saling bertentangan arahnya. Langkah paling tepat untuk merumuskan visi yang benar-benar transformasional adalah ....", opts:["Merumuskan visi berdasarkan pandangan pribadi kepala sekolah karena masukan terlalu beragam, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran.", "Mensintesiskan masukan-masukan tersebut menjadi visi yang menangkap benang merah kepentingan bersama, sambil tetap berorientasi pada kebutuhan mutu pembelajaran murid.", "Memilih masukan dari pihak yang paling banyak jumlahnya sebagai dasar visi sekolah.", "Menggabungkan seluruh masukan tersebut apa adanya tanpa menyaringnya lebih dulu."], correct:1, e:"Perumusan visi transformasional yang matang mensintesiskan keberagaman masukan menjadi benang merah bersama berorientasi mutu, bukan memilih suara terbanyak, menggabungkan mentah, atau mengabaikan masukan sama sekali."},
+{s:"Manajerial", q:"Kepala sekolah menemukan bahwa semangat perubahan yang ia bangun di awal kepemimpinannya mulai melemah setelah dua tahun berjalan, meski capaian akademik tetap stabil. Langkah paling tepat untuk menjaga keberlanjutan semangat transformasi adalah ....", opts:["Menambah jumlah program baru secara signifikan untuk membangkitkan kembali semangat.", "Mempertahankan tantangan yang sama seperti di awal kepemimpinan agar fokus tidak bergeser.", "Menerima kondisi stabil tersebut sebagai capaian akhir dari proses transformasi yang sudah cukup, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi.", "Merayakan pencapaian yang telah diraih bersama warga sekolah sambil merumuskan tantangan baru yang relevan, agar semangat perubahan terus terpelihara tanpa membuat warga sekolah kelelahan."], correct:3, e:"Keberlanjutan semangat transformasi memerlukan perayaan pencapaian dan tantangan baru yang relevan, bukan mempertahankan tantangan lama, menambah beban berlebihan, atau menganggap stabilitas sebagai titik akhir."},
+{s:"Manajerial", q:"Kepala sekolah ingin menerapkan kepemimpinan yang lebih transformasional dengan melibatkan guru dalam pengambilan keputusan, namun struktur birokrasi sekolah selama ini sangat hierarkis dan formal. Langkah paling tepat adalah ....", opts:["Membongkar seluruh struktur hierarkis tersebut secara mendadak demi partisipasi penuh.", "Mempertahankan struktur hierarkis tersebut karena dianggap sudah berjalan tertib selama ini, walau belum tentu efektif dalam jangka panjang, meski risikonya belum sepenuhnya dipertimbangkan, meski risikonya belum sepenuhnya dipertimbangkan.", "Membuka ruang partisipasi guru secara bertahap dalam pengambilan keputusan, dimulai dari hal-hal yang dampaknya langsung dirasakan guru, sambil tetap menjaga akuntabilitas struktur yang ada.", "Melibatkan guru dalam pengambilan keputusan hanya secara simbolis tanpa pengaruh nyata."], correct:2, e:"Perubahan menuju kepemimpinan partisipatif dilakukan bertahap dengan menjaga akuntabilitas, bukan membongkar struktur mendadak, mempertahankan hierarki kaku, atau melibatkan secara simbolis tanpa makna."},
+{s:"Manajerial", q:"Kepala sekolah mendapati bahwa visi transformasionalnya tentang pembelajaran berpusat pada murid diterjemahkan berbeda-beda oleh setiap guru, sehingga praktik di kelas menjadi sangat beragam dan sulit dievaluasi kualitasnya. Langkah paling tepat adalah ....", opts:["Menyusun kesepahaman bersama tentang prinsip inti pembelajaran berpusat pada murid lewat diskusi kolektif, tanpa menyeragamkan metode spesifik setiap guru.", "Membiarkan keberagaman praktik tersebut karena mencerminkan kreativitas masing-masing guru.", "Menghentikan penerapan visi tersebut karena sulit dievaluasi keberhasilannya secara objektif, secara sepihak tanpa persetujuan pihak terkait, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran.", "Menetapkan satu metode pembelajaran yang wajib diterapkan seluruh guru secara seragam."], correct:0, e:"Kesepahaman bersama tentang prinsip inti menjaga kualitas tanpa mematikan kreativitas, lebih tepat dibanding menyeragamkan metode, membiarkan tanpa arah, atau menghentikan visi karena kesulitan evaluasi."},
+{s:"Supervisi Akademik", q:"Kepala sekolah ingin agar supervisi akademik tidak sekadar menilai, melainkan menjadi bagian dari perjalanan transformasi pembelajaran bersama guru. Namun guru masih memandang supervisi sebagai evaluasi yang menegangkan. Langkah paling tepat adalah ....", opts:["Mempertahankan format supervisi yang ada karena sudah menjadi kebiasaan bertahun-tahun, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran, secara sepihak tanpa persetujuan pihak terkait.", "Menghapus seluruh unsur evaluasi dari supervisi demi kenyamanan guru semata.", "Mengurangi frekuensi supervisi agar guru tidak lagi merasa tertekan olehnya.", "Mengubah narasi dan praktik supervisi menjadi dialog reflektif berbasis tujuan bersama, sehingga guru merasakan supervisi sebagai dukungan menuju visi, bukan penilaian yang mengancam."], correct:3, e:"Transformasi makna supervisi menjadi dukungan bersama menuju visi memerlukan perubahan narasi dan praktik, bukan mempertahankan format lama, mengurangi frekuensi, atau menghapus unsur evaluasi sepenuhnya."},
+{s:"Supervisi Akademik", q:"Guru senior sudah tiga kali menerima umpan balik hasil observasi, tetapi praktik mengajarnya tidak berubah. Langkah kepala sekolah berikutnya yang paling tepat adalah ....", opts:["Memberi tugas administrasi tambahan agar guru lebih bersungguh-sungguh.", "Beralih ke pendekatan coaching berdasarkan tujuan guru sendiri, menyepakati satu target kecil, lalu mengobservasi ulang perkembangannya.", "Menghentikan supervisi karena guru tersebut sudah sangat berpengalaman.", "Menambah frekuensi supervisi dan mencatat hasilnya untuk penilaian kinerja, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini."], correct:1, e:"Umpan balik searah gagal mengubah perilaku; coaching yang berangkat dari tujuan guru sendiri lebih efektif membangun komitmen menuju perubahan yang diinginkan."},
+{s:"Supervisi Akademik", q:"Hasil supervisi menunjukkan 80% guru memiliki perencanaan pembelajaran yang baik sesuai visi sekolah, tetapi pelaksanaan di kelas masih berpusat pada guru. Program pembinaan paling tepat adalah ....", opts:["Berfokus pada praktik di kelas lewat kunjungan sejawat dan refleksi, agar kesenjangan antara rencana dan pelaksanaan yang menghambat visi benar-benar teratasi.", "Memperketat pemeriksaan perangkat ajar setiap minggu oleh kepala sekolah, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran, secara sepihak tanpa persetujuan pihak terkait.", "Menambah pelatihan penyusunan modul ajar untuk seluruh guru.", "Mewajibkan semua guru memakai satu model pembelajaran yang seragam."], correct:0, e:"Data menunjukkan kesenjangan pada pelaksanaan, sehingga pembinaan harus menyasar praktik kelas agar visi pembelajaran berpusat pada murid benar terwujud, bukan menambah dokumen atau menyeragamkan metode."},
+{s:"Supervisi Akademik", q:"Kepala sekolah menemukan bahwa guru yang paling mendukung visi transformasional justru memiliki hasil supervisi kelas biasa saja, sementara guru yang hasil supervisinya sangat baik tampak kurang tertarik pada visi tersebut. Sikap paling tepat adalah ....", opts:["Mengabaikan dukungan terhadap visi karena hasil supervisi kelas dianggap lebih penting, meski risikonya belum sepenuhnya dipertimbangkan, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi.", "Mengembangkan keduanya sesuai kekuatan masing-masing: memperkuat praktik kelas guru yang mendukung visi, dan mengajak dialog guru berpraktik baik agar turut memahami arah visi bersama.", "Menjadikan guru pendukung visi sebagai panutan utama tanpa pembinaan praktik tambahan.", "Membiarkan kondisi tersebut karena keduanya dianggap sudah berkontribusi cukup baik."], correct:1, e:"Pengembangan yang baik memperhatikan kekuatan berbeda tiap individu tanpa mengabaikan atau menyamaratakan kontribusi, sehingga dukungan visi dan kompetensi praktik dapat tumbuh bersama."},
+{s:"Supervisi Akademik", q:"Setelah program Komunitas Belajar berjalan efektif untuk mayoritas guru sebagai wadah berbagi visi dan praktik baik, ditemukan satu-dua guru yang justru merasa terintimidasi oleh forum tersebut. Langkah paling tepat adalah ....", opts:["Membiarkan forum berjalan seperti biasa karena mayoritas guru merasa terbantu.", "Menghentikan program Komunitas Belajar demi menghindari rasa tidak nyaman guru tertentu, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini.", "Merancang format berbagi yang lebih inklusif dan aman secara psikologis, tanpa mengurangi kualitas masukan yang bermanfaat bagi visi bersama sekolah.", "Melarang guru junior memberikan masukan kepada guru yang lebih senior."], correct:2, e:"Efektivitas program bagi mayoritas tidak berarti mengabaikan kenyamanan psikologis sebagian guru; format yang inklusif menjaga keduanya tanpa menghentikan manfaat forum bagi visi bersama."},
+{s:"Supervisi Akademik", q:"Kepala sekolah ingin memastikan supervisi akademik benar-benar mendukung arah pembelajaran mendalam sesuai visi sekolah, namun instrumen supervisi yang dipakai masih instrumen lama yang berfokus pada administrasi. Langkah paling tepat adalah ....", opts:["Mempertahankan instrumen lama karena guru sudah terbiasa menggunakannya selama ini.", "Menggunakan dua instrumen sekaligus tanpa menyelaraskan keduanya dengan visi sekolah, agar terlihat responsif meski belum tentu menjawab akar masalahnya.", "Merevisi instrumen supervisi agar mencerminkan indikator pembelajaran mendalam sesuai visi, sambil tetap melibatkan guru dalam proses penyusunannya.", "Mengganti instrumen tersebut secara sepihak tanpa melibatkan masukan dari guru."], correct:2, e:"Instrumen supervisi perlu direvisi agar selaras dengan visi pembelajaran mendalam, dengan pelibatan guru menjaga penerimaan, bukan mempertahankan instrumen usang, mengganti sepihak, atau membiarkan dua sistem berjalan tanpa keselarasan."},
+{s:"Supervisi Akademik", q:"Setelah beberapa siklus supervisi, seorang guru menunjukkan kemajuan pesat dan mulai membantu membina rekan lain sebagai bagian dari mewujudkan visi belajar bersama. Namun ia belum memiliki peran resmi sebagai fasilitator. Langkah paling tepat adalah ....", opts:["Menambah jam mengajarnya secara signifikan sebagai bentuk penghargaan langsung, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini.", "Menunggu guru tersebut mengajukan permintaan resmi terlebih dahulu.", "Memberikan pengakuan formal dan peran sebagai fasilitator dalam Komunitas Belajar, disesuaikan dengan kapasitas dan beban kerjanya.", "Membiarkan kontribusinya tanpa pengakuan formal karena berasal dari kerelaan."], correct:2, e:"Kontribusi guru yang berkembang perlu diapresiasi secara proaktif dan proporsional agar semangat berbagi visi dan praktik baik tetap terjaga dan berkelanjutan."},
+{s:"Supervisi Akademik", q:"Kepala sekolah mendapati bahwa hasil rekap supervisi lima tahun terakhir menunjukkan topik pembinaan yang berulang untuk guru yang sama, meski catatan menunjukkan komitmen guru untuk berubah setiap kali. Langkah paling tepat adalah ....", opts:["Menyimpulkan guru tersebut tidak memiliki kapasitas untuk berubah secara nyata.", "Menghentikan pembinaan bagi guru tersebut karena dianggap sudah cukup diberi kesempatan, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi.", "Mengulang jenis pembinaan yang sama karena guru tetap menunjukkan komitmen setiap sesi.", "Mengevaluasi efektivitas jenis tindak lanjut yang selama ini diberikan dan mencoba pendekatan pembinaan yang berbeda, karena pengulangan pola menandakan metode sebelumnya belum berhasil."], correct:3, e:"Pengulangan masalah meski komitmen ada menandakan pendekatan pembinaan perlu diperbarui, bukan diulang, disimpulkan sebagai ketidakmampuan, atau dihentikan begitu saja."},
+{s:"Supervisi Akademik", q:"Kepala sekolah menemukan bahwa program pendampingan sejawat justru menimbulkan ketegangan karena sebagian guru merasa dinilai oleh rekan yang usianya lebih muda, padahal tujuannya mendukung visi belajar bersama. Langkah paling tepat adalah ....", opts:["Menyusun ulang mekanisme pendampingan sejawat agar berbasis keahlian spesifik dan kesukarelaan, bukan hierarki usia, sambil membangun budaya saling belajar yang setara.", "Menghentikan program pendampingan sejawat karena menimbulkan ketegangan antarguru.", "Mengganti seluruh pendamping dengan guru yang usianya lebih senior tanpa terkecuali, secara sepihak tanpa persetujuan pihak terkait, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini.", "Membiarkan ketegangan tersebut karena dianggap dinamika wajar antarrekan kerja."], correct:0, e:"Ketegangan akibat persepsi hierarki usia perlu dibenahi lewat mekanisme berbasis keahlian dan kesukarelaan, bukan dihentikan, diganti berdasarkan usia semata, atau dibiarkan."},
+{s:"Sosial", q:"Kepala sekolah yang visioner ingin melibatkan orang tua sebagai mitra dalam mewujudkan visi sekolah, namun sebagian besar orang tua hanya hadir saat pembagian rapor dan jarang terlibat dalam kegiatan lain. Langkah paling tepat adalah ....", opts:["Mewajibkan kehadiran seluruh orang tua pada setiap kegiatan sekolah.", "Hanya melibatkan orang tua yang selama ini sudah aktif dalam pengambilan keputusan.", "Merancang bentuk keterlibatan orang tua yang fleksibel dan bermakna sesuai visi sekolah, tanpa membebani waktu dan kondisi ekonomi mereka secara berlebihan.", "Membiarkan pola tersebut karena partisipasi bersifat sukarela bagi setiap orang tua, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi, agar terlihat responsif meski belum tentu menjawab akar masalahnya."], correct:2, e:"Kesetaraan akses partisipasi perlu dirancang secara sengaja sesuai visi kemitraan, bukan dibiarkan, diwajibkan tanpa mempertimbangkan kondisi, atau terbatas pada kelompok yang sudah aktif saja."},
+{s:"Sosial", q:"Komite sekolah mendesak iuran wajib untuk kegiatan yang mendukung visi baru sekolah, padahal sebagian orang tua kurang mampu. Sikap kepala sekolah yang paling tepat adalah ....", opts:["Membatalkan seluruh kegiatan agar tidak menimbulkan polemik di masyarakat.", "Menetapkan iuran wajib dengan pembebasan bagi yang mengajukan surat tidak mampu, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran.", "Membiarkan komite menagih langsung kepada orang tua murid yang belum bayar.", "Menegaskan bahwa sumbangan bersifat sukarela dan mencari pendanaan alternatif bersama komite, agar visi tetap terwujud tanpa merugikan murid dari keluarga kurang mampu."], correct:3, e:"Komite boleh menggalang sumbangan sukarela tetapi tidak melakukan pungutan; kolaborasi mewujudkan visi tetap dijaga tanpa mengorbankan hak murid dari keluarga kurang mampu."},
+{s:"Sosial", q:"Guru dan orang tua berdebat panas di grup WhatsApp kelas soal tugas proyek yang sebenarnya bagian dari implementasi visi pembelajaran mendalam sekolah. Langkah kepala sekolah yang paling tepat adalah ....", opts:["Menghentikan perdebatan di grup, mempertemukan kedua pihak secara langsung, dan menjelaskan kaitan tugas proyek tersebut dengan visi sekolah secara jernih.", "Ikut membalas di grup untuk meluruskan fakta secara terbuka.", "Menutup grup kelas dan melarang seluruh komunikasi digital dengan orang tua, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah.", "Meminta guru meminta maaf di grup tanpa klarifikasi lebih dulu."], correct:0, e:"Konflik diselesaikan lewat mediasi tatap muka disertai penjelasan kaitan dengan visi sekolah, bukan memperpanjang debat publik, menutup komunikasi, atau meminta maaf tanpa klarifikasi."},
+{s:"Sosial", q:"Sebuah perusahaan menawarkan beasiswa bagi murid yang sejalan dengan visi sekolah tentang pemerataan kesempatan belajar, namun meminta data pribadi seluruh murid sebagai syarat. Keputusan kepala sekolah yang paling tepat adalah ....", opts:["Menerima kerja sama dengan perjanjian tertulis yang membatasi data pribadi murid dan melibatkan persetujuan orang tua.", "Memberikan data tanpa perjanjian tertulis selama perusahaan tepercaya, meski risikonya belum sepenuhnya dipertimbangkan.", "Menolak semua kerja sama dengan dunia usaha karena berisiko.", "Menyerahkan data lengkap karena tujuannya untuk kepentingan murid."], correct:0, e:"Kemitraan yang mendukung visi tetap harus melindungi data pribadi murid; perjanjian dan persetujuan orang tua menjadi syarat wajib sebelum kerja sama berjalan."},
+{s:"Sosial", q:"Seorang wali murid yang juga pejabat pemerintah daerah menyampaikan kritik keras terhadap arah visi baru sekolah secara pribadi kepada kepala sekolah, bukan lewat forum resmi. Sikap kepala sekolah yang paling tepat adalah ....", opts:["Membawa kritik tersebut ke rapat komite tanpa persetujuan wali murid yang menyampaikannya, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi.", "Mendengarkan dan menindaklanjuti substansi kritik secara profesional, sambil tetap menjaga proses pengambilan keputusan visi sekolah melalui mekanisme resmi yang berlaku bagi semua pihak.", "Mengabaikan kritik tersebut karena disampaikan di luar forum resmi.", "Menuruti permintaan agar kritik tidak dibahas di forum resmi karena berasal dari pejabat."], correct:1, e:"Substansi kritik tetap ditindaklanjuti secara profesional, namun proses pengambilan keputusan visi sekolah harus tetap setara dan tidak dipengaruhi status jabatan seseorang."},
+{s:"Sosial", q:"Dua kelompok orang tua memiliki pandangan berbeda soal kebijakan tugas rumah yang menjadi bagian implementasi visi pembelajaran mendalam: satu kelompok ingin dihapus, kelompok lain ingin dipertahankan penuh. Langkah kepala sekolah yang paling tepat adalah ....", opts:["Mengikuti kelompok yang jumlahnya lebih banyak menyampaikan pendapat.", "Menyerahkan keputusan kebijakan tugas rumah sepenuhnya kepada setiap guru, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah, meski risikonya belum sepenuhnya dipertimbangkan.", "Mengumpulkan data dan pendapat dari kedua kelompok serta guru, lalu merumuskan kebijakan tengah yang berbasis kebutuhan belajar murid sekaligus tetap selaras dengan visi sekolah.", "Mempertahankan kebijakan lama tanpa mendengarkan kedua kelompok tersebut."], correct:2, e:"Kebijakan yang melibatkan banyak pemangku kepentingan sebaiknya dirumuskan berdasarkan data dan kebutuhan murid serta keselarasan visi, bukan suara terbanyak semata."},
+{s:"Sosial", q:"Sekolah menerima permintaan wawancara dari peneliti pendidikan yang ingin mempublikasikan data internal terkait dampak visi transformasional sekolah, termasuk data sensitif seperti angka putus sekolah. Sikap kepala sekolah yang paling tepat adalah ....", opts:["Menolak seluruh permintaan penelitian karena data sekolah dianggap bersifat rahasia total, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran.", "Mendukung penelitian tersebut dengan menyepakati batas data yang dapat dipublikasikan, memastikan tidak ada informasi yang mengidentifikasi individu murid secara spesifik.", "Menyerahkan keputusan sepenuhnya kepada dinas pendidikan tanpa keterlibatan sekolah.", "Memberikan seluruh data mentah tanpa penyaringan apa pun kepada peneliti tersebut."], correct:1, e:"Dukungan terhadap penelitian tentang dampak visi tetap perlu menjaga privasi individu murid lewat kesepakatan batas data, bukan penolakan total atau pemberian data mentah tanpa penyaringan."},
+{s:"Sosial", q:"Sekelompok orang tua dari latar belakang ekonomi berbeda menunjukkan pola dukungan yang timpang terhadap kegiatan yang mendukung visi sekolah: yang mampu sangat aktif, yang kurang mampu jarang terlibat karena kendala waktu kerja. Langkah kepala sekolah yang paling tepat adalah ....", opts:["Membiarkan pola tersebut karena partisipasi bersifat sukarela bagi setiap orang tua, meski risikonya belum sepenuhnya dipertimbangkan, meski risikonya belum sepenuhnya dipertimbangkan.", "Mewajibkan kehadiran seluruh orang tua pada setiap kegiatan sekolah.", "Hanya melibatkan orang tua yang selama ini sudah aktif dalam pengambilan keputusan.", "Merancang bentuk keterlibatan yang fleksibel dan tidak membebani secara ekonomi maupun waktu, agar seluruh orang tua dapat berpartisipasi mewujudkan visi bersama."], correct:3, e:"Kesetaraan akses partisipasi perlu dirancang secara sengaja, bukan dibiarkan mengikuti pola yang timpang akibat kendala struktural."},
+{s:"Sosial", q:"Seorang mitra kerja sama sekolah meminta agar logonya dipasang di seragam murid sebagai imbalan bantuan seragam gratis bagi murid kurang mampu, sejalan dengan visi pemerataan sekolah. Sikap kepala sekolah yang paling tepat adalah ....", opts:["Menyerahkan keputusan sepenuhnya kepada wali kelas murid penerima bantuan.", "Menolak seluruh bantuan karena adanya syarat pemasangan logo tersebut.", "Menimbang manfaat bagi murid kurang mampu terhadap batas kewajaran promosi, lalu menegosiasikan bentuk pengakuan yang lebih wajar tanpa menjadikan murid sebagai media iklan.", "Menyetujui seluruh syarat karena manfaatnya langsung dirasakan murid kurang mampu, agar terlihat responsif meski belum tentu menjawab akar masalahnya, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini."], correct:2, e:"Kemitraan tetap perlu menjaga martabat murid; bantuan yang bermanfaat dapat diterima dengan negosiasi batas kewajaran promosi sesuai visi pemerataan sekolah."},
+{s:"Sosial", q:"Sebuah lembaga donor internasional menawarkan bantuan besar untuk mendukung visi transformasi digital sekolah, dengan syarat kurikulum tambahan mereka diajarkan tanpa penyesuaian meski kurang sesuai konteks lokal. Sikap kepala sekolah yang paling tepat adalah ....", opts:["Menolak seluruh tawaran bantuan tersebut tanpa mencoba bernegosiasi terlebih dahulu, secara sepihak tanpa persetujuan pihak terkait, agar terlihat responsif meski belum tentu menjawab akar masalahnya.", "Bernegosiasi agar kurikulum tambahan tersebut dapat disesuaikan dengan konteks lokal sebelum menerima bantuan, demi menjaga relevansi visi dan mutu pembelajaran murid.", "Menerima seluruh syarat tersebut karena nilai bantuannya sangat besar bagi sekolah.", "Menerima bantuan namun mengajarkan kurikulum tambahan tersebut secara asal-asalan."], correct:1, e:"Bantuan besar tetap perlu dinegosiasikan agar isinya relevan dengan konteks lokal dan visi sekolah, demi menjaga mutu pembelajaran, bukan diterima mentah, ditolak tanpa upaya, atau dijalankan asal-asalan."},
+{s:"Sosial", q:"Kepala sekolah mendapati bahwa forum diskusi daring resmi sekolah untuk membahas perkembangan visi jarang dipakai orang tua karena mereka lebih nyaman berkomunikasi lewat pesan pribadi kepada guru. Langkah paling tepat adalah ....", opts:["Mengevaluasi alasan rendahnya pemakaian forum resmi dan menyesuaikan formatnya agar lebih mudah dan relevan digunakan orang tua, tanpa melarang komunikasi pribadi yang memang diperlukan.", "Menghapus forum resmi tersebut karena terbukti tidak diminati oleh orang tua.", "Mewajibkan seluruh komunikasi orang tua-guru hanya melalui forum resmi tersebut.", "Membiarkan pola komunikasi pribadi berjalan karena dianggap lebih efektif bagi orang tua, secara sepihak tanpa persetujuan pihak terkait, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran."], correct:0, e:"Rendahnya pemakaian forum resmi perlu dievaluasi penyebabnya dan diperbaiki formatnya, bukan diwajibkan paksa, dibiarkan, atau dihapus begitu saja."},
+{s:"Kepribadian", q:"Kepala sekolah yang berupaya menjadi pemimpin transformasional menyadari bahwa dirinya secara tidak sadar lebih sering memberi kesempatan berbicara kepada guru tertentu dalam rapat karena kedekatan personal. Sikap paling tepat setelah menyadari hal ini adalah ....", opts:["Membiarkan pola tersebut karena kedekatan personal dianggap wajar terjadi.", "Mengakui bias tersebut kepada diri sendiri dan secara sadar menciptakan mekanisme rapat yang memberi kesempatan setara bagi semua guru untuk menyampaikan ide demi mewujudkan visi bersama.", "Menghindari sepenuhnya interaksi dengan guru yang dekat secara personal.", "Meminta guru lain untuk lebih aktif berbicara tanpa mengubah pola rapat sendiri, secara sepihak tanpa persetujuan pihak terkait, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat."], correct:1, e:"Kesadaran atas bias personal perlu ditindaklanjuti dengan perbaikan sistem yang memberi kesempatan setara, agar kepemimpinan yang memberdayakan benar-benar terwujud bagi semua guru."},
+{s:"Kepribadian", q:"Dalam situasi mendesak, kepala sekolah mengambil keputusan sepihak tanpa musyawarah demi mempercepat langkah menuju visi baru, dan keputusan itu ternyata tepat. Beberapa guru tetap mempertanyakan proses pengambilannya. Sikap paling tepat adalah ....", opts:["Mengabaikan pertanyaan guru karena keputusan tersebut sudah berlalu dan tepat, meski risikonya belum sepenuhnya dipertimbangkan, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat.", "Menjelaskan secara terbuka konteks keterbatasan waktu yang memaksa keputusan sepihak, serta menegaskan komitmen untuk kembali ke proses musyawarah pada situasi normal.", "Meminta maaf berlebihan meski keputusan tersebut memang perlu diambil cepat.", "Membela keputusan tersebut sepenuhnya karena hasilnya sudah terbukti tepat."], correct:1, e:"Hasil yang tepat tidak menghapus perlunya transparansi proses; penjelasan konteks dan komitmen pada musyawarah menjaga kepercayaan jangka panjang dalam kepemimpinan yang partisipatif."},
+{s:"Kepribadian", q:"Kepala sekolah menerima pujian publik atas keberhasilan transformasi sekolah yang sebenarnya merupakan hasil kerja keras timnya, sementara dirinya hanya berperan mengarahkan dari belakang. Sikap paling tepat adalah ....", opts:["Menerima pujian tersebut dengan rendah hati sambil secara eksplisit mengalihkan apresiasi kepada tim yang benar-benar menjalankan transformasi tersebut.", "Menolak sepenuhnya pujian tersebut dan menyerahkannya seluruhnya kepada tim.", "Menerima seluruh pujian tersebut sebagai bagian dari tanggung jawab kepemimpinannya, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini.", "Mengklarifikasi secara berlebihan detail peran masing-masing pihak di depan publik."], correct:0, e:"Kepemimpinan transformasional yang matang mengalihkan apresiasi secara proporsional kepada tim tanpa menerima pujian berlebihan atau menolaknya secara ekstrem yang justru mengabaikan peran kepemimpinan sendiri."},
+{s:"Kepribadian", q:"Kepala sekolah diminta menjadi juri lomba antarsekolah yang salah satu pesertanya adalah sekolahnya sendiri, yang selama ini dipromosikan sebagai sekolah percontohan transformasi. Sikap paling tepat adalah ....", opts:["Menerima menjadi juri tetapi berusaha bersikap objektif tanpa menyatakan hal tersebut kepada panitia, walau belum tentu efektif dalam jangka panjang, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat.", "Menyatakan potensi konflik kepentingan secara terbuka kepada panitia dan mengundurkan diri dari posisi juri untuk kategori yang diikuti sekolahnya sendiri.", "Menerima tanpa masalah karena yakin dapat bersikap adil kepada semua peserta.", "Meminta panitia mengecualikan sekolahnya sendiri dari penilaian tanpa mengundurkan diri sebagai juri."], correct:1, e:"Konflik kepentingan yang jelas harus diungkapkan secara terbuka dan diselesaikan dengan pengunduran diri dari posisi yang relevan, bukan sekadar keyakinan pribadi akan objektivitas."},
+{s:"Kepribadian", q:"Kepala sekolah menyadari bahwa dirinya cenderung menghindari memberikan penilaian kinerja rendah kepada guru manapun demi menjaga semangat kolektif menuju visi, meski data objektif menunjukkan ada guru yang kinerjanya perlu perbaikan signifikan. Langkah perbaikan diri paling tepat adalah ....", opts:["Melatih diri memberikan penilaian yang jujur dan berbasis data meski terasa tidak nyaman, karena penilaian yang terlalu longgar justru merugikan guru tersebut dan visi bersama dalam jangka panjang.", "Mempertahankan kebiasaan tersebut karena menjaga semangat kolektif dianggap lebih penting.", "Memberikan penilaian rendah kepada seluruh guru secara merata untuk menghindari kesan pilih kasih, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat, walau belum tentu efektif dalam jangka panjang.", "Menyerahkan seluruh proses penilaian kinerja kepada pihak lain agar tidak perlu menilai sendiri."], correct:0, e:"Kejujuran dalam penilaian berbasis data, meski tidak nyaman, lebih bermanfaat bagi perkembangan guru dan pencapaian visi jangka panjang dibanding penilaian yang terlalu longgar atau dilimpahkan ke pihak lain."},
+{s:"Kepribadian", q:"Kepala sekolah menemukan bahwa standar kedisiplinan waktu untuk dirinya sendiri ternyata lebih longgar dibanding standar yang ia tuntut dari para guru dalam mewujudkan budaya kerja baru sesuai visi. Langkah paling tepat adalah ....", opts:["Menyelaraskan standar kedisiplinan bagi diri sendiri agar setara dengan yang dituntut dari guru, karena keteladanan transformasional menuntut konsistensi antara ucapan dan tindakan pemimpin.", "Menyembunyikan kelonggaran tersebut agar tidak diketahui oleh para guru.", "Melonggarkan standar kedisiplinan bagi seluruh guru agar setara dengan standar pribadinya.", "Mempertahankan kelonggaran tersebut karena posisi kepala sekolah dianggap berbeda dari guru, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah, meski risikonya belum sepenuhnya dipertimbangkan."], correct:0, e:"Keteladanan transformasional menuntut konsistensi standar antara pemimpin dan yang dipimpin; penyelarasan ke standar yang lebih tinggi lebih tepat dibanding melonggarkan atau menyembunyikan kesenjangan."},
+{s:"Kepribadian", q:"Seorang guru muda menantang visi baru kepala sekolah secara terbuka dalam rapat dengan argumen yang kuat namun disampaikan dengan nada yang kurang sopan. Sikap kepala sekolah yang paling tepat adalah ....", opts:["Menerima seluruh argumen tersebut agar guru tersebut tidak merasa direndahkan.", "Merespons substansi argumen tersebut secara terbuka dan proporsional, lalu membicarakan secara terpisah dengan guru tersebut tentang cara penyampaian yang lebih santun.", "Mengabaikan argumen tersebut karena cara penyampaiannya dianggap tidak sopan.", "Menegur guru tersebut secara terbuka di hadapan rapat karena caranya kurang santun, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat."], correct:1, e:"Substansi argumen yang kuat tetap direspons secara proporsional, dengan pembicaraan terpisah soal etika penyampaian, tanpa menegur di depan umum atau mengabaikan substansinya."},
+{s:"Kepribadian", q:"Kepala sekolah menghadapi situasi di mana keputusan yang secara pribadi diyakininya penting untuk mempercepat visi ternyata bertentangan dengan hasil musyawarah mayoritas dewan guru. Sikap paling tepat adalah ....", opts:["Membatalkan hasil musyawarah tersebut dan mengambil alih keputusan sepenuhnya.", "Menghormati hasil musyawarah sebagai keputusan bersama sambil tetap menyampaikan pandangan pribadinya secara terbuka sebagai catatan untuk evaluasi di masa depan.", "Menerima hasil musyawarah tanpa menyampaikan pandangan pribadinya sama sekali.", "Tetap menjalankan keyakinan pribadinya karena merasa lebih memahami arah visi sekolah, secara sepihak tanpa persetujuan pihak terkait, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran."], correct:1, e:"Kepemimpinan partisipatif menghormati hasil musyawarah bersama, namun tetap dapat menyuarakan pandangan pribadi secara terbuka sebagai bahan refleksi, bukan mengabaikan atau membatalkannya."},
+{s:"Kepribadian", q:"Kepala sekolah merasa perlu menunjukkan ketegaran dan optimisme di depan guru dan murid demi menjaga semangat transformasi, namun secara pribadi mengalami tekanan yang cukup berat. Sikap yang paling tepat adalah ....", opts:["Mengambil cuti panjang tanpa memberi penjelasan apa pun kepada warga sekolah.", "Menyembunyikan sepenuhnya tekanan yang dialami tanpa mencari dukungan apa pun.", "Menunjukkan seluruh tekanan pribadi secara terbuka kepada murid agar mereka memahami, secara sepihak tanpa persetujuan pihak terkait, walau belum tentu efektif dalam jangka panjang, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran.", "Tetap menjaga profesionalisme di depan warga sekolah sambil mencari dukungan yang sesuai bagi dirinya sendiri, karena kesehatan pribadi kepala sekolah juga memengaruhi kualitas kepemimpinannya."], correct:3, e:"Profesionalisme di depan warga sekolah tetap penting, namun kepala sekolah juga perlu mencari dukungan yang sesuai bagi kesejahteraan dirinya sendiri, bukan menyembunyikan sepenuhnya atau justru membebani murid."},
+{s:"Kepribadian", q:"Kepala sekolah menyadari bahwa dirinya secara konsisten menghindari topik sulit dalam rapat demi menjaga suasana positif menuju visi, sehingga beberapa masalah penting tidak pernah benar-benar dibahas tuntas. Langkah perbaikan diri paling tepat adalah ....", opts:["Membahas topik sulit hanya secara personal di luar forum rapat resmi.", "Melatih diri membuka topik sulit secara terstruktur dan suportif dalam rapat, karena menghindari konflik justru membiarkan masalah penting tidak terselesaikan dan menghambat visi jangka panjang.", "Mendelegasikan seluruh topik sulit kepada wakil kepala sekolah tanpa keterlibatan langsung, meski risikonya belum sepenuhnya dipertimbangkan, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi.", "Mempertahankan kebiasaan tersebut karena rapat menjadi lebih tenang dan nyaman."], correct:1, e:"Menghindari konflik secara terus-menerus membiarkan masalah penting tidak terselesaikan; keterampilan membuka topik sulit secara suportif perlu dilatih agar visi benar terwujud."},
+{s:"Kewirausahaan", q:"Kepala sekolah ingin program kewirausahaan murid mencerminkan visi transformasional sekolah tentang kemandirian dan inovasi, namun program yang berjalan saat ini masih sekadar menjual hasil kerajinan tanpa pembelajaran kewirausahaan yang mendalam. Langkah paling tepat adalah ....", opts:["Menghentikan program tersebut karena dianggap belum sesuai dengan visi sekolah.", "Mempertahankan program tersebut karena sudah menghasilkan pemasukan yang stabil.", "Menambah jumlah produk yang dijual tanpa mengubah esensi pembelajaran di dalamnya, walau belum tentu efektif dalam jangka panjang, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat.", "Menata ulang program tersebut agar murid dilibatkan dalam proses berpikir kewirausahaan secara utuh, mulai dari identifikasi peluang hingga evaluasi, bukan hanya proses produksi dan penjualan."], correct:3, e:"Transformasi program kewirausahaan menuntut keterlibatan murid dalam keseluruhan proses berpikir kewirausahaan, bukan sekadar produksi-penjualan, agar visi kemandirian benar-benar terwujud."},
+{s:"Kewirausahaan", q:"Program kewirausahaan sekolah yang melibatkan penjualan hasil pertanian mulai bersaing dengan pedagang kecil setempat yang menjual produk serupa. Langkah paling tepat adalah ....", opts:["Menghentikan seluruh program pertanian sekolah demi menghindari persaingan dengan warga, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah.", "Menurunkan harga jual produk sekolah agar lebih murah dari pedagang setempat.", "Menyesuaikan skala dan sasaran pemasaran agar tidak berkompetisi langsung dengan pedagang kecil, dengan fokus pada nilai edukatif dan pasar yang berbeda.", "Melanjutkan penjualan tanpa penyesuaian karena tujuannya untuk pembelajaran murid."], correct:2, e:"Program kewirausahaan edukatif sebaiknya tidak menciptakan persaingan tidak sehat dengan ekonomi warga sekitar; penyesuaian skala dan sasaran menjaga tujuan edukatif sekaligus relasi sosial."},
+{s:"Kewirausahaan", q:"Sebuah ide inovasi murid yang lahir dari semangat visi transformasional sekolah berpotensi dikembangkan menjadi produk komersial oleh pihak luar yang tertarik, namun murid tersebut masih di bawah umur. Langkah paling tepat adalah ....", opts:["Melibatkan orang tua murid dalam setiap keputusan kerja sama, memastikan hak dan perlindungan murid terjamin sebelum ide tersebut dikembangkan pihak luar.", "Menyetujui kerja sama tersebut atas nama sekolah tanpa melibatkan orang tua murid.", "Menyerahkan sepenuhnya keputusan kepada murid karena ide tersebut miliknya sendiri.", "Menolak seluruh peluang tersebut karena murid yang bersangkutan masih di bawah umur, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran."], correct:0, e:"Perlindungan hak murid di bawah umur mengharuskan keterlibatan orang tua dalam setiap keputusan yang menyangkut potensi komersial idenya, meski idenya lahir dari semangat visi sekolah."},
+{s:"Kewirausahaan", q:"Keuntungan dari program kewirausahaan sekolah yang menjadi bagian visi kemandirian cukup besar, dan sebagian guru mengusulkan sebagian dibagikan sebagai insentif tunai bagi pembina. Keputusan paling tepat adalah ....", opts:["Menyerahkan keputusan penggunaan keuntungan sepenuhnya kepada guru pembina program, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi, walau belum tentu efektif dalam jangka panjang.", "Membagikan seluruh keuntungan sebagai insentif tunai langsung kepada guru pembina.", "Menyimpan seluruh keuntungan tanpa dialokasikan untuk pengembangan program apa pun.", "Mengalokasikan keuntungan tersebut kembali untuk pengembangan program dan kesejahteraan murid sesuai aturan pengelolaan keuangan, dengan penghargaan bagi pembina dalam bentuk yang sesuai ketentuan."], correct:3, e:"Keuntungan dari kegiatan kewirausahaan sekolah tetap tunduk pada aturan pengelolaan keuangan; penghargaan bagi pembina harus sesuai ketentuan yang berlaku, bukan insentif tunai bebas."},
+{s:"Kewirausahaan", q:"Sekolah ingin mereplikasi program kewirausahaan sekolah lain yang sukses dan sejalan dengan visi transformasional, meski kondisi sumber daya dan karakteristik muridnya cukup berbeda. Langkah paling tepat adalah ....", opts:["Mempelajari prinsip keberhasilan program tersebut sebelum mengadaptasinya sesuai konteks sumber daya dan karakteristik murid di sekolah sendiri.", "Mengabaikan program tersebut sepenuhnya karena kondisi sekolah berbeda.", "Menjalankan program tersebut hanya sebagian kecil tanpa mempelajari prinsip dasarnya, secara sepihak tanpa persetujuan pihak terkait, meski risikonya belum sepenuhnya dipertimbangkan.", "Mereplikasi program tersebut secara persis tanpa penyesuaian apa pun."], correct:0, e:"Praktik baik dari sekolah lain perlu dipahami prinsip dasarnya lalu diadaptasi sesuai konteks, bukan direplikasi mentah atau diabaikan karena perbedaan kondisi."},
+{s:"Studi Kasus Terintegrasi", q:"Kepala sekolah baru mendapati kondisi kompleks: ia ingin membawa visi transformasional, namun Rapor Pendidikan membaik pelan, survei kepuasan guru terhadap kepemimpinan sebelumnya rendah, dan sebagian guru senior tetap setia pada gaya lama yang otoriter namun efektif secara angka. Strategi paling tepat adalah ....", opts:["Mengganti total seluruh gaya kepemimpinan sebelumnya secara mendadak demi memperbaiki iklim kerja, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi.", "Mempertahankan gaya kepemimpinan lama sepenuhnya karena angkanya terbukti efektif.", "Mengabaikan hasil survei kepuasan guru karena capaian akademik sudah menunjukkan hasil baik.", "Mempertahankan praktik yang terbukti efektif berdasarkan data sambil membangun gaya kepemimpinan transformasional secara bertahap, tanpa mengorbankan capaian yang sudah baik."], correct:3, e:"Perubahan gaya kepemimpinan menuju yang transformasional perlu dilakukan bertahap agar capaian yang sudah baik tidak hilang, sambil tetap memperbaiki iklim kerja yang menjadi keluhan nyata guru."},
+{s:"Studi Kasus Terintegrasi", q:"Dugaan pelecehan verbal oleh seorang guru terhadap murid mencuat lewat pesan berantai, sementara guru tersebut membantah dan sebagian rekan kerja mendukungnya karena dianggap berkarakter baik selama ini dan turut mendukung visi sekolah. Langkah kepala sekolah yang paling tepat adalah ....", opts:["Mengaktifkan mekanisme penanganan sesuai prosedur PPKSP secara objektif, melindungi murid selama proses berlangsung, dan tidak menyimpulkan apa pun berdasarkan reputasi personal sebelum investigasi selesai.", "Langsung memberikan sanksi berat kepada guru tersebut berdasarkan pesan berantai yang beredar, sebelum benar-benar memastikan kesiapan seluruh pihak yang terlibat, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran.", "Mempercayai guru tersebut karena reputasinya selama ini dianggap baik oleh rekan kerja.", "Menunggu opini publik mereda sebelum melakukan penanganan apa pun terhadap kasus ini."], correct:0, e:"Penanganan dugaan pelecehan harus mengikuti prosedur objektif, melindungi murid, dan tidak dipengaruhi reputasi personal maupun opini publik sebelum ada hasil investigasi, meski guru tersebut dianggap mendukung visi sekolah."},
+{s:"Studi Kasus Terintegrasi", q:"Kepala sekolah menemukan bahwa sistem yang diwariskan pendahulunya sangat bergantung pada kontrol ketat dan sentralisasi keputusan, sehingga saat pendahulunya cuti sekolah nyaris tidak berfungsi normal. Ia ingin membangun kepemimpinan yang lebih transformasional dan memberdayakan. Langkah strategis paling tepat adalah ....", opts:["Membangun sistem pendelegasian dan penguatan kapasitas tim secara bertahap, agar keberlangsungan sekolah tidak bergantung sepenuhnya pada satu figur pemimpin.", "Mendelegasikan seluruh kewenangan sekaligus secara mendadak kepada tim yang belum siap.", "Mempertahankan sistem sentralisasi tersebut karena terbukti efektif menjaga kontrol mutu, walau belum tentu efektif dalam jangka panjang, meski risikonya belum sepenuhnya dipertimbangkan.", "Membiarkan sistem berjalan seperti biasa selama kepala sekolah yang baru masih menjabat."], correct:0, e:"Ketergantungan berlebihan pada satu figur adalah risiko keberlanjutan organisasi; pendelegasian dan penguatan kapasitas tim perlu dilakukan bertahap sebagai wujud kepemimpinan transformasional yang sejati."},
+{s:"Studi Kasus Terintegrasi", q:"Sekolah menghadapi tuntutan ganda: masyarakat menuntut mempertahankan tradisi lama sekolah yang sudah puluhan tahun berjalan, sementara visi transformasional baru dan data mutu menunjukkan sebagian tradisi tersebut kurang relevan dengan kebutuhan pembelajaran murid saat ini. Langkah kepala sekolah yang paling tepat adalah ....", opts:["Menunda seluruh perubahan sampai masyarakat sendiri yang mengusulkan perubahan tersebut.", "Menghapus tradisi yang kurang relevan secara sepihak berdasarkan data mutu semata.", "Mempertahankan seluruh tradisi lama tanpa perubahan demi menjaga hubungan dengan masyarakat, meski risikonya belum sepenuhnya dipertimbangkan, walau belum tentu efektif dalam jangka panjang, tanpa mempertimbangkan konsekuensi jangka panjang bagi mutu pembelajaran.", "Melibatkan masyarakat dalam dialog terbuka untuk menelaah bersama tradisi mana yang tetap relevan dan mana yang perlu disesuaikan dengan visi baru, agar perubahan dilakukan dengan dukungan bukan penolakan."], correct:3, e:"Perubahan yang menyangkut tradisi bernilai sosial perlu melibatkan dialog terbuka dengan masyarakat, agar visi baru berbasis data tetap mendapat dukungan, bukan dipertahankan kaku atau dihapus sepihak."},
+{s:"Studi Kasus Terintegrasi", q:"Setelah dua tahun menjalankan kepemimpinan transformasional, kepala sekolah mendapati capaian akademik membaik signifikan, tetapi survei internal menunjukkan tingkat kelelahan dan stres guru meningkat tajam akibat beban kerja tambahan dari berbagai inisiatif baru. Keputusan strategis yang paling tepat adalah ....", opts:["Mempertahankan seluruh program karena hasilnya sudah terbukti meningkatkan mutu.", "Mengurangi drastis seluruh program tanpa mengevaluasi mana yang paling membebani, karena lebih mudah dilaksanakan meski dampaknya belum tentu tepat sasaran, meski risikonya belum sepenuhnya dipertimbangkan.", "Menganggap kelelahan guru adalah konsekuensi wajar dari peningkatan mutu.", "Mengevaluasi ulang beban kerja dan menata program agar peningkatan mutu tetap berjalan tanpa mengorbankan kesejahteraan guru, karena keberlanjutan visi bergantung pada kapasitas guru yang terjaga."], correct:3, e:"Peningkatan mutu yang berkelanjutan harus memperhatikan keberlanjutan kapasitas guru, sehingga beban kerja perlu dievaluasi dan ditata ulang agar visi transformasional benar-benar berkelanjutan."},
+{s:"Studi Kasus Terintegrasi", q:"Kepala sekolah menghadapi situasi: ia ingin mewujudkan visi transformasional yang inklusif, namun literasi dan numerasi murid rendah, sebagian guru resisten terhadap perubahan, orang tua kritis, dan dana terbatas. Urutan langkah 100 hari pertama yang paling tepat adalah ....", opts:["Memperbaiki sarana yang tampak agar dukungan orang tua cepat pulih.", "Menyusun program lengkap terlebih dahulu, kemudian mensosialisasikannya kepada seluruh warga, walau belum tentu efektif dalam jangka panjang, meski risikonya belum sepenuhnya dipertimbangkan.", "Membaca data dan berdialog dengan guru serta orang tua untuk merumuskan visi bersama, menetapkan satu prioritas awal, lalu memulai perubahan kecil dengan pendampingan.", "Mengganti tim inti sekolah lebih dulu, baru kemudian membenahi pembelajaran."], correct:2, e:"Kepemimpinan transformasional yang efektif diawali dengan mendengar dan merumuskan visi bersama berbasis data, lalu langkah kecil bersama yang terukur, bukan menyusun program sepihak atau tindakan drastis."},
+{s:"Studi Kasus Terintegrasi", q:"Kepala sekolah menemukan bahwa keberhasilan salah satu program unggulan yang menjadi kebanggaan visi transformasional sekolah ternyata banyak ditopang oleh sumbangan pribadi seorang guru, tanpa sepengetahuan resmi kepala sekolah sebelumnya. Langkah paling tepat adalah ....", opts:["Membiarkan pola tersebut berlanjut karena program sudah terbukti berjalan dengan baik.", "Menghentikan program tersebut karena sumber pendanaannya dianggap tidak sesuai prosedur, walau belum tentu efektif dalam jangka panjang, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini.", "Mengapresiasi pengorbanan guru tersebut sambil segera membangun mekanisme pendanaan resmi agar program tidak lagi bergantung pada pengorbanan pribadi individu.", "Meminta guru tersebut terus menanggung biaya karena sudah menjadi kebiasaan program itu."], correct:2, e:"Ketergantungan pada pengorbanan pribadi individu adalah risiko keberlanjutan yang perlu segera dibenahi lewat mekanisme resmi, agar visi transformasional benar berkelanjutan secara kelembagaan."},
+{s:"Studi Kasus Terintegrasi", q:"Setelah setahun menjabat dengan semangat visi transformasional, kepala sekolah menyadari bahwa program-program yang dijalankan terlalu banyak dan tumpang tindih, membuat guru kelelahan meski masing-masing program sebenarnya bermanfaat dan relevan dengan visi. Langkah paling tepat adalah ....", opts:["Membiarkan kondisi tersebut karena guru dianggap mampu mengelola waktu sendiri.", "Melakukan evaluasi menyeluruh untuk mengintegrasikan atau memangkas program yang tumpang tindih, agar sumber daya dan energi guru lebih fokus pada dampak yang lebih besar sesuai visi.", "Memangkas seluruh program sekaligus tanpa mengevaluasi kontribusi masing-masing.", "Mempertahankan seluruh program karena masing-masing terbukti bermanfaat bagi murid, secara sepihak tanpa persetujuan pihak terkait, meski belum tentu sesuai dengan kebutuhan dan data yang tersedia saat ini."], correct:1, e:"Terlalu banyak program yang bermanfaat secara individual tetap dapat menimbulkan kelelahan sistemik; evaluasi dan integrasi diperlukan agar visi transformasional berdampak optimal tanpa membebani berlebihan."},
+{s:"Studi Kasus Terintegrasi", q:"Sekolah menghadapi pilihan menerapkan seluruh elemen kebijakan pusat terkait transformasi pendidikan secara serentak demi kepatuhan penuh, atau bertahap sesuai kesiapan riil sekolah yang masih terbatas. Keputusan paling tepat adalah ....", opts:["Menerapkan sebagian kecil secara simbolis tanpa komitmen mengembangkan sisanya secara nyata, tanpa mengevaluasi dampaknya lebih lanjut terhadap seluruh warga sekolah, karena dianggap sudah cukup tanpa perlu melibatkan pihak lain lagi.", "Menerapkan seluruh elemen kebijakan secara serentak demi menunjukkan kepatuhan penuh.", "Menerapkan bertahap sesuai kesiapan riil sekolah sambil tetap menunjukkan komitmen dan progres yang jelas kepada pihak berwenang, agar penerapan benar-benar bermakna bukan sekadar formalitas.", "Menunda penerapan sepenuhnya sampai seluruh sumber daya benar-benar siap secara ideal."], correct:2, e:"Penerapan bertahap yang bermakna dengan komitmen jelas lebih baik dibanding kepatuhan serentak yang dangkal, penundaan tanpa progres, atau penerapan simbolis tanpa keberlanjutan."},
+];
+
+const QUESTIONS = RAW.map((r,i)=>({
+  id:i+1,
+  section:r.s,
+  text:r.q,
+  options:r.opts,
+  correct:r.correct,
+  explain:r.e
+}));
+
+const SECTIONS = ["Manajerial","Supervisi Akademik","Sosial","Kepribadian","Kewirausahaan","Studi Kasus Terintegrasi"];
+const LETTERS = ["A","B","C","D"];
+
+/* ======================= STATE ======================= */
+let answers = new Array(QUESTIONS.length).fill(null);
+let current = 0;
+let submitted = false;
+let timeLeft = 120*60;
+let timerId = null;
+
+/* ======================= DOM refs ======================= */
+const startScreen = document.getElementById('startScreen');
+const quizScreen = document.getElementById('quizScreen');
+const resultScreen = document.getElementById('resultScreen');
+const clockEl = document.getElementById('clock');
+const mapPanel = document.getElementById('mapPanel');
+const qTag = document.getElementById('qTag');
+const qIdx = document.getElementById('qIdx');
+const qText = document.getElementById('qText');
+const qOptions = document.getElementById('qOptions');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const finishBtn = document.getElementById('finishBtn');
+
+document.getElementById('startBtn').addEventListener('click', startQuiz);
+prevBtn.addEventListener('click', ()=>{ if(current>0){current--; renderQuestion();} });
+nextBtn.addEventListener('click', ()=>{ if(current<QUESTIONS.length-1){current++; renderQuestion();} });
+finishBtn.addEventListener('click', ()=>{ if(confirm('Yakin ingin menyelesaikan dan mengirim jawaban? Soal yang belum dijawab akan dianggap kosong.')){ submitTest(); } });
+
+function startQuiz(){
+  startScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  renderMap();
+  renderQuestion();
+  startTimer();
+}
+
+function startTimer(){
+  timerId = setInterval(()=>{
+    timeLeft--;
+    updateClock();
+    if(timeLeft<=0){
+      clearInterval(timerId);
+      submitTest();
+    }
+  },1000);
+}
+
+function updateClock(){
+  const h = Math.floor(timeLeft/3600);
+  const m = Math.floor((timeLeft%3600)/60);
+  const s = timeLeft%60;
+  const pad = n=>String(n).padStart(2,'0');
+  clockEl.textContent = pad(h)+":"+pad(m)+":"+pad(s);
+  if(timeLeft<=300){ clockEl.classList.add('warn'); }
+}
+
+function renderMap(){
+  mapPanel.innerHTML = '<h2>Peta Soal</h2>';
+  SECTIONS.forEach(sec=>{
+    const qsInSection = QUESTIONS.filter(q=>q.section===sec);
+    const group = document.createElement('div');
+    group.className = 'section-group';
+    const answeredCount = qsInSection.filter(q=>answers[q.id-1]!==null).length;
+    group.innerHTML = '<div class="section-name">'+sec+'<span class="count">'+answeredCount+'/'+qsInSection.length+'</span></div>';
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    qsInSection.forEach(q=>{
+      const btn = document.createElement('button');
+      btn.className = 'qnum';
+      btn.textContent = q.id;
+      btn.id = 'map-q'+q.id;
+      btn.addEventListener('click', ()=>{ current = q.id-1; renderQuestion(); });
+      grid.appendChild(btn);
+    });
+    group.appendChild(grid);
+    mapPanel.appendChild(group);
+  });
+  const prog = document.createElement('div');
+  prog.className = 'progress-line';
+  prog.id = 'progressLine';
+  mapPanel.appendChild(prog);
+  updateMapStates();
+}
+
+function updateMapStates(){
+  QUESTIONS.forEach(q=>{
+    const btn = document.getElementById('map-q'+q.id);
+    if(!btn) return;
+    btn.classList.toggle('answered', answers[q.id-1]!==null);
+    btn.classList.toggle('current', q.id-1===current);
+    if(submitted){
+      btn.classList.toggle('correct', answers[q.id-1]===q.correct);
+      btn.classList.toggle('wrong', answers[q.id-1]!==null && answers[q.id-1]!==q.correct);
+    }
+  });
+  const answeredTotal = answers.filter(a=>a!==null).length;
+  const pl = document.getElementById('progressLine');
+  if(pl) pl.innerHTML = '<strong>'+answeredTotal+'</strong> dari '+QUESTIONS.length+' soal terjawab';
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[current];
+  qTag.textContent = q.section;
+  qIdx.textContent = 'Soal '+q.id+' dari '+QUESTIONS.length;
+  qText.textContent = q.text;
+  qOptions.innerHTML = '';
+  q.options.forEach((optText, i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = '<span class="letter">'+LETTERS[i]+'</span><span>'+optText+'</span>';
+    if(answers[current]===i) btn.classList.add('selected');
+    btn.addEventListener('click', ()=>{
+      if(submitted) return;
+      answers[current] = i;
+      renderQuestion();
+      updateMapStates();
+    });
+    qOptions.appendChild(btn);
+  });
+  prevBtn.disabled = current===0;
+  nextBtn.disabled = current===QUESTIONS.length-1;
+  updateMapStates();
+}
+
+function submitTest(){
+  submitted = true;
+  clearInterval(timerId);
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.remove('hidden');
+  renderResults();
+}
+
+function renderResults(){
+  const total = QUESTIONS.length;
+  let correctCount = 0;
+  const bySection = {};
+  SECTIONS.forEach(s=>bySection[s]={correct:0,total:0});
+
+  QUESTIONS.forEach(q=>{
+    bySection[q.section].total++;
+    if(answers[q.id-1]===q.correct){
+      correctCount++;
+      bySection[q.section].correct++;
+    }
+  });
+
+  const score = Math.round((correctCount/total)*100);
+  document.getElementById('resultHeadline').textContent = 'Skor Anda: '+score+' ('+correctCount+'/'+total+' benar)';
+  document.getElementById('resultSub').textContent = 'Pada seleksi asli, kelulusan ditentukan lewat peringkat nilai, jadi gunakan skor ini sebagai patokan belajar. Pelajari pembahasan, terutama kelompok dengan skor terendah.';
+
+  const summaryEl = document.getElementById('resultsSummary');
+  summaryEl.innerHTML = '';
+  SECTIONS.forEach(sec=>{
+    const d = bySection[sec];
+    const pct = Math.round((d.correct/d.total)*100);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<div class="sec">'+sec+'</div><div class="score">'+d.correct+'/'+d.total+'</div><div class="bar"><span style="width:'+pct+'%"></span></div>';
+    summaryEl.appendChild(card);
+  });
+
+  const reviewEl = document.getElementById('reviewList');
+  reviewEl.innerHTML = '';
+  QUESTIONS.forEach(q=>{
+    const userAns = answers[q.id-1];
+    const isCorrect = userAns===q.correct;
+    const isBlank = userAns===null;
+    const item = document.createElement('div');
+    item.className = 'review-item';
+    const pillClass = isBlank ? 'blank' : (isCorrect ? 'correct' : 'wrong');
+    const pillText = isBlank ? 'Tidak dijawab' : (isCorrect ? 'Benar' : 'Salah');
+    item.innerHTML =
+      '<div class="rmeta"><span class="pill '+pillClass+'">'+pillText+'</span><span style="color:var(--ink-soft)">Soal '+q.id+' &middot; '+q.section+'</span></div>'+
+      '<div class="rq">'+q.text+'</div>'+
+      '<div class="rexp"><strong>Jawaban tepat: '+LETTERS[q.correct]+'. '+q.options[q.correct]+'</strong><br>'+q.explain+'</div>';
+    reviewEl.appendChild(item);
+  });
+
+  updateMapStates();
+}
+
+updateClock();
+</script>
+</body>
+</html>
